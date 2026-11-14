@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Radar — the launch board</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="masthead">
+  <svg class="radar-art" viewBox="0 0 400 400" aria-hidden="true">
+    <g fill="none" stroke="#bcd8d2" stroke-width="1.5">
+      <circle cx="200" cy="200" r="60"/><circle cx="200" cy="200" r="120"/><circle cx="200" cy="200" r="180"/>
+      <line x1="200" y1="20" x2="200" y2="380"/><line x1="20" y1="200" x2="380" y2="200"/>
+    </g>
+    <path d="M200,200 L200,20 A180,180 0 0 1 327,73 Z" fill="#f5b942" opacity="0.35"/>
+    <g fill="#f5b942"><circle cx="262" cy="122" r="6"/><circle cx="140" cy="262" r="5"/><circle cx="306" cy="248" r="7"/><circle cx="200" cy="200" r="4"/></g>
+  </svg>
+  <div class="masthead-inner">
+    <div>
+      <p class="kicker">Token launch radar &middot; snapshot <span id="asof">&mdash;</span></p>
+      <h1>What is the next token worth?</h1>
+      <p class="lede">Every protocol that can still launch a token, ranked by what that token would be worth — TVL, growth, age, and what the market already pays for issued tokens in the same category. A token that already trades never appears on this board: it prices the board, from the comparables table below.</p>
+    </div>
+    <dl class="stats" id="stats"></dl>
+  </div>
+</header>
+
+<main>
+  <section class="spotlight" id="spotlight" aria-label="Top launch candidates"></section>
+
+  <section class="board">
+    <h2>The launch board — 198 launches, ranked</h2>
+    <p class="board-note">One population, one scale. Every row below is a protocol with no token that passes the launch rule, ranked by its implied value. No traded token, no bridge, no exchange and no wrapper is ranked here — they are counted under <a href="#method">how the model works</a>, not smuggled into the ranking.</p>
+    <div class="controls" id="controls">
+      <label>Search <input id="q" type="search" placeholder="protocol name" autocomplete="off"></label>
+      <label>Category <select id="cat"><option value="">All categories</option></select></label>
+      <label>Chain <select id="chain"><option value="">All chains</option></select></label>
+      <label>Min TVL <select id="mintvl">
+        <option value="0" selected>Any</option>
+        <option value="1000000">$1M</option>
+        <option value="10000000">$10M</option>
+        <option value="100000000">$100M</option>
+        <option value="1000000000">$1B</option>
+      </select></label>
+      <label>Sort <select id="sort">
+        <option value="value">Implied value</option>
+        <option value="tvl">TVL</option>
+        <option value="growth">7d change</option>
+        <option value="age">Age</option>
+      </select></label>
+      <label class="check"><input id="watch" type="checkbox"> Watchlist only</label>
+      <button id="csv" type="button">Download CSV</button>
+    </div>
+    <p class="count" id="count"></p>
+    <div class="table-wrap"><table id="board">
+      <thead><tr>
+        <th class="num">#</th><th>Protocol</th><th>Category</th><th>Chains</th>
+        <th class="num">TVL</th><th class="num">7d</th><th class="num">Age</th>
+        <th class="num">Implied value</th><th>Status</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="empty" id="empty" hidden>No launch candidate matches these filters.</p>
+    <div class="hist" id="hist" aria-label="TVL distribution of the rows shown"></div>
+  </section>
+
+  <section class="leaders-wrap">
+    <h2>Leaders by category</h2>
+    <p class="board-note">The best launch in each of the eight biggest categories — the one to watch if you only follow one corner of the market. Click a card to open its detail view, with every model input and the farm plan.</p>
+    <div class="leaders" id="leaders"></div>
+  </section>
+
+  <section class="rollup-wrap">
+    <h2>By category</h2>
+    <p class="board-note">One row per category on the launch board: how many launches it holds, its best launch, and what the category's launches are worth together. Click a row to open its best launch.</p>
+    <div class="table-wrap"><table id="rollup">
+      <thead><tr>
+        <th>Category</th><th class="num">Launches</th><th>Best launch</th>
+        <th class="num">Best launch value</th><th class="num">Category total</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
+
+  <section class="tokens" id="tokens">
+    <h2>Live tokens that price the board — not ranked</h2>
+    <p class="comp-note"><strong>Unranked, by design.</strong> These 128 tokens already trade, so they are not launches and they take no place on the board above. They are shown because their market caps set the category multiples the model uses — the biggest tokens set the price, which is why this table is ordered by market cap, largest first. That order is a lookup order, not a ranking: there is no rank column, no farm plan and no board value here, and no row in this table outranks any launch. Click a column header to sort by it instead.</p>
+    <div class="table-wrap"><table id="tokens-table">
+      <thead><tr>
+        <th>Token</th><th>Category</th>
+        <th class="num">TVL</th><th class="num">Market cap</th><th class="num">Model estimate</th><th class="num">Model vs market</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
+
+  <section class="leftout" id="excluded">
+    <h2>Left out — and why</h2>
+    <p class="board-note">Every protocol the snapshot holds that is neither a launch row nor a comparables row, listed by name with the exact reason it was left out. The counts in the method note below are the summary; this table is the receipt. Filter by reason to see one kind of omission at a time.</p>
+    <div class="controls">
+      <label>Search <input id="ex-search" type="search" placeholder="protocol name" autocomplete="off"></label>
+      <label>Reason <select id="ex-reason"><option value="">All reasons</option></select></label>
+      <label>Sort <select id="ex-sort">
+        <option value="tvl">TVL</option>
+        <option value="name">Name</option>
+      </select></label>
+      <button id="ex-csv" type="button">Download CSV</button>
+    </div>
+    <p class="count" id="ex-count"></p>
+    <div class="table-wrap"><table id="excluded-table">
+      <thead><tr>
+        <th>Protocol</th><th>Category</th>
+        <th class="num">TVL</th><th>Reason</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
+
+  <section class="method" id="method">
+    <h2>How the model works</h2>
+    <div class="formula">
+      <p><strong>implied = TVL &times; category multiple &times; growth &times; maturity &times; chains</strong></p>
+      <ul>
+        <li><strong>Category multiple.</strong> Median market-cap / TVL of the category&rsquo;s live tokens, shrunk toward the global median with a prior of 5, clamped to 0.05&ndash;2.5. A category with fewer than 2 live tokens never sets its own price — it uses the global median, so no single outlier can price a category.</li>
+        <li><strong>Growth.</strong> 1 + clamp(7d change, &minus;50&hellip;+150%) / 100 &times; 0.6.</li>
+        <li><strong>Maturity.</strong> 0.6 + 0.4 &times; min(age, 1460 days) / 1460 — age matters more than in the first radar.</li>
+        <li><strong>Chains.</strong> 1 + 0.04 per extra chain, capped at five extras.</li>
+        <li><strong>Floor &amp; cap.</strong> Implied value is at least $1 and at most $100,000,000,000,000.</li>
+      </ul>
+      <p class="calibration" id="calibration"></p>
+      <p class="excluded" id="excluded-note"></p>
+    </div>
+    <h3>Comparables the model used</h3>
+    <p class="table-note">One row per category. <em>Live</em> is the number of traded tokens with a real market cap and TVL. <em>Median</em> is their market-cap / TVL. <em>Used</em> is the multiple the model actually applied after shrinkage and clamping.</p>
+    <div class="table-wrap"><table id="comparables">
+      <thead><tr><th>Category</th><th class="num">Live</th><th class="num">Median</th><th class="num">Used</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
+
+  <section class="detail" id="detail" hidden></section>
+</main>
+
+<footer>
+  <p>Token Radar v3 &middot; model radar-3 &middot; launch-only board &middot; snapshot <span id="asof2">&mdash;</span> &middot; all figures from the sealed snapshot; nothing on this page fetches the network.</p>
+</footer>
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
